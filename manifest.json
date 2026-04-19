@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,
+  "name": "ResPro",
+  "version": "2.3",
+  "description": "MyAccess BH — Assegnatore automatico di responsibility",
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "*://myaccess-bh.saviyntcloud.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ResPro",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://myaccess-bh.saviyntcloud.com/*"],
+      "css": ["style.css"],
+      "js": [
+        "src/core/constants.js",
+        "src/core/utils.js",
+        "src/core/storage.js",
+        "src/core/skip-rules.js",
+        "src/core/myaccess.js",
+        "src/core/assigner.js",
+        "src/core/justifier.js",
+        "src/core/notify.js",
+        "src/core/spa-nav.js",
+        "src/ui/icons.js",
+        "src/ui/panel-html.js",
+        "src/ui/interactions.js",
+        "src/ui/dropdown.js",
+        "src/ui/logger.js",
+        "src/ui/shortcuts.js",
+        "src/ui/tab-templates.js",
+        "src/ui/tab-skip.js",
+        "src/ui/panel.js",
+        "src/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["style.css", "icon128.png"],
+      "matches": ["*://myaccess-bh.saviyntcloud.com/*"]
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

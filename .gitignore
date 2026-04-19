@@ -1,0 +1,21 @@
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Node (se mai aggiungi tooling tipo eslint o test runner)
+node_modules/
+package-lock.json
+npm-debug.log
+yarn.lock
+
+# Build artefatti / pacchetti
+*.zip
+*.crx
+*.pem
+
+# File temporanei locali
+_test*.js
+*.bak
