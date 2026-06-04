@@ -10,8 +10,9 @@ window.RGP = window.RGP || {};
    *   1. "Contractors - Supply Chain"  (per contractor MVN)
    *   2. "Supply Chain"                (esclusi GS)
    *   3. "Contractors"
-   *   4. Altro escludendo "Global Services"
-   *   5. Global Services solo se non c'è alternativa
+   *   4. "(NP-GE)"                     (preferenza esplicita su TD-GE e altri)
+   *   5. Altro escludendo "Global Services"
+   *   6. Global Services solo se non c'è alternativa
    */
   function chooseBest(pattern, matches) {
     if (matches.length === 1) return matches[0];
@@ -36,6 +37,13 @@ window.RGP = window.RGP || {};
     if (contractors.length) {
       const w = contractors.sort(byScore)[0];
       RGP.debug(`chooseBest "${pattern}": Contractors (${contractors.length} candidati)`);
+      return w;
+    }
+
+    const npge = matches.filter(m => /\(NP-GE\)/i.test(m.text));
+    if (npge.length) {
+      const w = npge.sort(byScore)[0];
+      RGP.debug(`chooseBest "${pattern}": NP-GE (${npge.length} candidati)`);
       return w;
     }
 
