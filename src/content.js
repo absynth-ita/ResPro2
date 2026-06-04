@@ -6,6 +6,37 @@
   /** Mostra il pannello sulle pagine rilevanti, lo nasconde altrimenti. */
   function syncWithUrl() {
     if (RGP.isRelevantPage()) {
+      const searchInput = RGP.myaccess.getSearchInput();
+      
+      // ⚠️ Se non c'è search input = account non enabled
+      if (!searchInput) {
+        if (!api) api = RGP.panel.mount();
+        else api.show();
+        
+        RGP.modal.showModal({
+          title: "⚠️ Account non enabled",
+          message: "Verifica di aver completato lo Step 1 e abilitato l'account.",
+          buttons: [
+            {
+              label: "Ignora",
+              type: "secondary",
+              action: () => {
+                RGP.debug("Utente ha ignorato il warning — pannello resta visibile");
+              }
+            },
+            {
+              label: "← Torna Indietro",
+              type: "primary",
+              action: () => window.history.back()
+            }
+          ],
+          blur: true,
+          blocking: true,
+        });
+        return;
+      }
+      
+      // ✅ Search input esiste — continua normalmente
       if (!api) api = RGP.panel.mount();
       else api.show();
       // Switch automatico su tab corretta
