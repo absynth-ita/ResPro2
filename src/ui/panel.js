@@ -48,6 +48,10 @@ window.RGP = window.RGP || {};
       progBar:     $("#rgp-pb"),
       progLbl:     $("#rgp-prog-lbl"),
       start:       $("#rgp-start"),
+      clearOpen:   $("#rgp-clear-open"),
+      clearOptions:$("#rgp-clear-options"),
+      clearRun:    $("#rgp-clear-run"),
+      clearAck:    $("#rgp-clear-ack"),
       pause:       $("#rgp-pause"),
       stop:        $("#rgp-stop"),
       input:       $("#rgp-input"),
@@ -71,7 +75,10 @@ window.RGP = window.RGP || {};
     }
 
     function setBtnState(running) {
-      els.start.disabled = running;
+      els.start.disabled = running || justifying;
+      els.clearOpen.disabled = running || justifying;
+      els.clearRun.disabled = running || justifying || (clearMode() === "all" && !els.clearAck.checked);
+      els.justRun.disabled = running || justifying;
       els.start.style.opacity = running ? ".3" : "1";
     }
 
@@ -171,9 +178,8 @@ window.RGP = window.RGP || {};
       if (!state.running) return;
       // abort proper: interrompe anche le delay() in corso
       state.abortCtrl?.abort();
-      state.running = false;
       state.paused = false;
-      setBtnState(false);
+      // Keep the operation locked until its finally block completes.
       els.pause.innerHTML = `${I.pause} Pausa`;
       mainLog.log("⏹ Fermato", "rgp-warn");
     }
@@ -186,7 +192,8 @@ window.RGP = window.RGP || {};
     }
 
     async function handleRun() {
-      if (state.running) return;
+      if (state.running || justifying) return;
+      els.clearOptions.classList.add("rgp-hidden");
       let list = els.input.value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
       if (!list.length && state.selectedTpl && state.templates[state.selectedTpl]) {
         list = [...state.templates[state.selectedTpl]];
@@ -243,13 +250,70 @@ window.RGP = window.RGP || {};
     }
     els.start.addEventListener("click", handleRun);
 
+    function clearMode() {
+      return $('input[name="rgp-clear-mode"]:checked').value;
+    }
+    function syncClearChoice() {
+      const all = clearMode() === "all";
+      $("#rgp-clear-warning").classList.toggle("rgp-hidden", !all);
+      els.clearRun.textContent = all ? "Rimuovi tutte" : "Rimuovi aggiunte";
+      els.clearRun.disabled = state.running || justifying || (all && !els.clearAck.checked);
+    }
+    els.clearOpen.addEventListener("click", () => {
+      if (state.running || justifying) return;
+      $('input[name="rgp-clear-mode"][value="new"]').checked = true;
+      els.clearAck.checked = false;
+      syncClearChoice();
+      els.clearOptions.classList.toggle("rgp-hidden");
+      if (!els.clearOptions.classList.contains("rgp-hidden")) $('input[name="rgp-clear-mode"]:checked').focus();
+    });
+    panel.querySelectorAll('input[name="rgp-clear-mode"]').forEach(el => el.addEventListener("change", () => {
+      els.clearAck.checked = false; syncClearChoice();
+    }));
+    els.clearAck.addEventListener("change", syncClearChoice);
+    els.clearOptions.addEventListener("keydown", e => {
+      if (e.key === "Escape") {
+        els.clearOptions.classList.add("rgp-hidden"); els.clearOpen.focus();
+      }
+    });
+    $("#rgp-clear-cancel").addEventListener("click", () => els.clearOptions.classList.add("rgp-hidden"));
+    els.clearRun.addEventListener("click", async () => {
+      if (state.running || justifying) return;
+      const mode = clearMode();
+      if (mode === "all" && !els.clearAck.checked) return;
+      els.clearOptions.classList.add("rgp-hidden");
+      state.running = true; state.paused = false;
+      state.abortCtrl = new AbortController();
+      setBtnState(true); mainLog.clear(); setProgress(0, 0);
+      mainLog.log(mode === "all" ? "🧹 Rimozione di tutte le responsibility selezionate" : "🧹 Rimozione delle sole aggiunte; conservo User has access");
+      try {
+        const result = await RGP.remover.run(mode, {
+          signal: state.abortCtrl.signal, waitIfPaused, log: mainLog.log,
+          onProgress: (removed, initial) => {
+            els.progBar.style.width = (initial ? Math.round(removed / initial * 100) : 0) + "%";
+            els.progLbl.textContent = `${removed} rimosse · ${initial} selezionate inizialmente`;
+          }
+        });
+        if (!result.aborted) els.progBar.style.width = "100%";
+        mainLog.log(result.aborted
+          ? `⏹ Interrotto: ${result.removed} rimozioni confermate. Controlla la selezione: l’ultimo clic potrebbe essere già stato recepito.`
+          : `🏁 Completato: ${result.removed} rimosse, ${result.remaining} ancora selezionate.`, "rgp-done");
+        mainLog.log("Controlla le modifiche. Submit Request resta manuale.", "rgp-review");
+      } catch (e) {
+        mainLog.log("❌ " + e.message, "rgp-err");
+      } finally {
+        state.running = false; state.paused = false;
+        setBtnState(false); els.pause.innerHTML = `${I.pause} Pausa`;
+      }
+    });
+
     // ── Tab Justify: handlers ────────────────────────────────────────────────
     els.justText.value = state.justText;
     els.justText.placeholder = "Testo da inserire in tutte le justification… (Ctrl+Enter per compilare)";
 
     let justifying = false;
     async function handleJustify() {
-      if (justifying) return;
+      if (justifying || state.running) return;
       const text = els.justText.value.trim();
       if (!text) { justLog.log("⚠️ Inserisci il testo di giustificazione", "rgp-warn"); return; }
       state.justText = text;
@@ -257,7 +321,7 @@ window.RGP = window.RGP || {};
 
       justLog.clear();
       justifying = true;
-      els.justRun.disabled = true;
+      setBtnState(true);
       try {
         const { filled, conflicts } = await RGP.justifier.runJustify(text, justLog.log);
         justLog.log("──────────────────────────");
@@ -271,7 +335,7 @@ window.RGP = window.RGP || {};
         console.error("[ResPro] justify error:", e);
       } finally {
         justifying = false;
-        els.justRun.disabled = false;
+        setBtnState(false);
       }
     }
     els.justRun.addEventListener("click", handleJustify);
@@ -324,6 +388,7 @@ window.RGP = window.RGP || {};
       isVisible: () => panel.style.display !== "none",
       switchTab,
       destroy: () => {
+        state.abortCtrl?.abort();
         disposeDrag();
         disposeResize();
         disposeShortcuts();

@@ -3,7 +3,7 @@ const path=require('path');
 const base=path.resolve(__dirname,'..')+'/';
 (async()=>{
  const browser=await chromium.launch({headless:true});const page=await browser.newPage();
- const load=async html=>{await page.setContent(html);for(const f of ['constants','utils','myaccess','justifier'])await page.addScriptTag({path:base+'src/core/'+f+'.js'});await page.evaluate(()=>{for(const k in RGP.const.TIMING)RGP.const.TIMING[k]=k==='CANDIDATE_TIMEOUT'?250:1;});};
+ const load=async html=>{await page.setContent(html);for(const f of ['constants','utils','myaccess','justifier','remover'])await page.addScriptTag({path:base+'src/core/'+f+'.js'});await page.evaluate(()=>{for(const k in RGP.const.TIMING)RGP.const.TIMING[k]=k==='CANDIDATE_TIMEOUT'?250:1;});};
  const assert=(x,m)=>{if(!x)throw Error(m);console.log('PASS '+m)};
  await load(`<aside><input placeholder="Search pages & features"></aside><main><section><h3>Available Application Roles</h3><input id="correct" placeholder="Search by Application Roles"><div><h4>PS AZ Intrastat (NP-GE)</h4><button aria-label="Add">+</button></div><div><h4>Another role</h4><button><svg><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div><button aria-label="Next page"><svg></svg></button></section><section><h3>Selected Application Roles</h3><input placeholder="Search by Application Roles"><div>Do not remove<button aria-label="Remove">−</button></div></section></main>`);
  assert(await page.evaluate(()=>RGP.myaccess.getSearchInput()?.id==='correct'),'available search selected');
@@ -22,5 +22,7 @@ const base=path.resolve(__dirname,'..')+'/';
  const legacy=await page.evaluate(()=>RGP.justifier.runJustify('Legacy',()=>{}));assert(legacy.filled===2&&legacy.conflicts===1,'legacy justification and SoD preserved');
  await load('<button>Add Justification</button><div><label>Comments</label><textarea></textarea></div><input type="checkbox" id="disclaimerCheckbox">');
  assert(await page.evaluate(async()=>{try{await RGP.justifier.runJustify('Wrong',()=>{});return false;}catch{return !document.querySelector('textarea').value&&!document.querySelector('input').checked;}}),'unrecognized expansion stops before filling comments/disclaimer');
+ await load(`<aside><button aria-label="Remove">−</button></aside><main><section><h3>Available Application Roles</h3><input placeholder="Search by Application Roles"><button>+</button></section><section><h3>Selected Application Roles</h3><input placeholder="Search by Application Roles"><p>Records per page: 5 | 1 – 2 of 2</p><article><div><h4>Already owned responsibility</h4><button aria-label="Remove">−</button></div><span>User has access</span></article><article><h4>New responsibility</h4><button aria-label="Remove">−</button></article><button aria-label="Next page" disabled>›</button></section></main>`);
+ assert(await page.evaluate(()=>{const s=RGP.remover.adapter.read();return s.total===2&&s.cards.length===2&&s.cards[0].existing&&!s.cards[1].existing;}),'selected scope and existing badge outside inner wrapper');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

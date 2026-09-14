@@ -48,6 +48,7 @@ document.getElementById("btn-inject").onclick = async () => {
         "src/core/skip-rules.js",
         "src/core/myaccess.js",
         "src/core/assigner.js",
+        "src/core/remover.js",
         "src/core/justifier.js",
         "src/core/notify.js",
         "src/core/spa-nav.js",

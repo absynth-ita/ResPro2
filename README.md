@@ -2,7 +2,7 @@
 
 > Estensione Chrome per assegnazione e giustificazione automatica delle responsibility su MyAccess (Saviynt).
 
-**Versione 2.4.1** — adattamento al layout MyAccess di settembre 2026.
+**Versione 2.5.0** — adattamento al layout MyAccess di settembre 2026.
 
 ---
 
@@ -17,7 +17,20 @@
 
 ## Changelog
 
-### v2.4.1 (corrente)
+### v2.5.0 (corrente)
+
+- Nuovo pulsante **Svuota responsibility…** nell’Assegnatore.
+- **Solo aggiunte in questa richiesta** conserva le card con il badge “User has access”.
+- **Tutte, comprese quelle già possedute** richiede la spunta di conferma delle revoche.
+- Cancella il filtro nella colonna selezionata, torna alla prima pagina e percorre le pagine successive.
+- Conta soltanto le rimozioni confermate dalla scomparsa della card e dalla diminuzione del totale.
+- Supporta Pausa, Ferma ed Esc; impedisce assegnazione, svuotamento e giustificazione simultanei.
+- Nessun clic su Submit Request. Dopo Stop, l’ultimo clic già effettuato potrebbe essere completato dal portale.
+- Se card, contatore o paginazione non sono riconosciuti, interrompe con un errore. Il riconoscimento dei ruoli già posseduti dipende dal badge inglese “User has access”, come negli screenshot forniti.
+
+Validazione: 7 scenari di svuotamento e 4 scenari di evidenziazione superati con Node. I test browser in `tests/dom.cjs` sono aggiornati ma non eseguiti in questo ambiente; prima prova da effettuare sul portale reale.
+
+### v2.4.1
 
 - Ripristinata una finestra visibile di 650 ms prima del clic: giallo per i candidati, verde per il ruolo scelto.
 - Sfondi più netti e contorni colorati, con rimozione degli sfondi opachi dei wrapper di testo delle card.
@@ -216,7 +229,7 @@ GitHub non fa versioning automatico. Per ogni release:
 
 | | |
 |--|--|
-| Versione | 2.4.1 |
+| Versione | 2.5.0 |
 | Manifest | MV3 |
 | Compatibilità | Chrome 100+ |
 | Pagine attive | `createrequestsecondstep`, `createrequestthirdstep` |

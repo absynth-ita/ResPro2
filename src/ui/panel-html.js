@@ -35,6 +35,16 @@ RGP.buildPanelHTML = function () {
     <button id="rgp-pause" title="Pausa / Riprendi">${I.pause} Pausa</button>
     <button id="rgp-stop" title="Ferma">${I.stop} Ferma</button>
   </div>
+  <button id="rgp-clear-open" class="rgp-pill">Svuota responsibility…</button>
+  <div id="rgp-clear-options" class="rgp-hidden" role="group" aria-label="Svuota responsibility">
+    <strong>Svuota responsibility assegnate</strong>
+    <label><input type="radio" name="rgp-clear-mode" value="new" checked> Solo aggiunte in questa richiesta</label>
+    <small>Conserva quelle contrassegnate “User has access”.</small>
+    <label><input type="radio" name="rgp-clear-mode" value="all"> Tutte, comprese quelle già possedute</label>
+    <label id="rgp-clear-warning" class="rgp-hidden"><input id="rgp-clear-ack" type="checkbox"> Confermo: voglio rimuovere anche i ruoli già posseduti e preparare le relative revoche.</label>
+    <small>Verrà svuotato il filtro della colonna selezionata e verranno percorse tutte le pagine. Submit resta manuale.</small>
+    <div class="rgp-row-gap"><button id="rgp-clear-run" class="rgp-pill">Rimuovi aggiunte</button><button id="rgp-clear-cancel" class="rgp-pill">Annulla</button></div>
+  </div>
   <div id="rgp-pb-wrap"><div id="rgp-pb"></div></div>
   <div id="rgp-prog-lbl"></div>
   <div id="rgp-log"></div>
