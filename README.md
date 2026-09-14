@@ -2,7 +2,7 @@
 
 > Estensione Chrome per assegnazione e giustificazione automatica delle responsibility su MyAccess (Saviynt).
 
-**Versione 2.3** — shortcut da tastiera + notifiche desktop.
+**Versione 2.4.1** — adattamento al layout MyAccess di settembre 2026.
 
 ---
 
@@ -17,7 +17,29 @@
 
 ## Changelog
 
-### v2.3 (corrente)
+### v2.4.1 (corrente)
+
+- Ripristinata una finestra visibile di 650 ms prima del clic: giallo per i candidati, verde per il ruolo scelto.
+- Sfondi più netti e contorni colorati, con rimozione degli sfondi opachi dei wrapper di testo delle card.
+- Controllo del candidato dopo la pausa: se la pagina cambia risultati, il clic viene evitato e il ruolo segnalato nel log.
+- La pausa rispetta Stop e Pausa. Le evidenziazioni vengono rimosse prima della ricerca successiva e alla fine.
+- Verificati sintassi, pacchetto e workflow con test Node. Resa grafica da verificare sul portale reale.
+
+### v2.4
+
+- Ricerca limitata alla sezione Available Application Roles: esclude menu laterale e Selected Application Roles.
+- Pulsanti di aggiunta cercati solo nella colonna disponibile; eliminato il riconoscimento indiscriminato di qualsiasi SVG.
+- Apertura sequenziale di Add Justification con attesa della textarea e compilazione immediata, anche con accordion.
+- Riconoscimento di Justification e Comments tramite etichette/placeholder, mantenendo il supporto degli ID precedenti e dei conflitti SoD.
+- I testi già compilati non vengono sovrascritti. Un'apertura non riconosciuta interrompe la compilazione con un errore.
+- Rimosso il falso errore “Account non enabled” basato sulla mancanza di un campo ricerca nella pagina di review.
+- Submit Request resta manuale.
+
+Verifica: sintassi JavaScript e integrità del pacchetto controllate. Test DOM inclusi in tests/dom.cjs, non eseguiti in questo ambiente perché Chromium non è disponibile e il download è andato in timeout; il DOM del portale reale non è stato fornito. I pulsanti devono avere un'etichetta Add, un'icona nota o un SVG riconoscibile come più. Se il portale usa un markup diverso, servirà l'HTML della sezione interessata.
+
+Per eseguire i test: installa Playwright in un ambiente di sviluppo (`npm install --no-save playwright`), installa Chromium (`npx playwright install chromium`) ed esegui `node tests/dom.cjs`.
+
+### v2.3
 
 - ⌨️ **Shortcut da tastiera.** Pattern Slack/GitHub: dentro la textarea, **Ctrl+Enter** (o **Cmd+Enter** su Mac) esegue l'azione del tab (Avvia / Compila tutto). Durante un'esecuzione, **Esc** ferma. Niente combo strane da memorizzare, zero conflitti con Chrome perché agiscono solo dentro le textarea ResPro.
 - 🔔 **Notifiche desktop a fine batch.** Quando finisce un'assegnazione o una compilazione justification, parte una notifica nativa con il riepilogo (✅ aggiunti / ⏭ saltati / ❌ non trovati). Permission richiesta una volta sola al primo uso. Niente notifica se hai fermato a mano col tasto Stop o Esc.
@@ -93,7 +115,7 @@ Quando MyAccess cambia DOM, sai esattamente dove andare: `src/core/myaccess.js`.
 
 ### Migrazione dalle versioni precedenti
 
-Disinstalla la vecchia, installa la nuova. Tutto viene migrato automaticamente.
+Sostituisci i file nella cartella della versione già caricata, poi premi Ricarica su ResPro in `chrome://extensions` e aggiorna MyAccess. Non disinstallare: in questo modo conservi template e impostazioni.
 
 ### Aggiornamenti futuri
 
@@ -194,7 +216,7 @@ GitHub non fa versioning automatico. Per ogni release:
 
 | | |
 |--|--|
-| Versione | 2.3 |
+| Versione | 2.4.1 |
 | Manifest | MV3 |
 | Compatibilità | Chrome 100+ |
 | Pagine attive | `createrequestsecondstep`, `createrequestthirdstep` |

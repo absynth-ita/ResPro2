@@ -428,16 +428,27 @@
 #rgp-panel *::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 99px; }
 
 /* ── Page highlights ──────────────────────────────────────────────────────── */
-.rgp-hit td, .rgp-hit {
-  background: rgba(210,153,34,.12) !important;
-  box-shadow: inset 4px 0 0 rgba(210,153,34,.7) !important;
-  transition: background .2s !important;
+/* Solid fills and an outer outline remain visible on nested Saviynt cards. */
+.rgp-hit {
+  background-color: #fff0b3 !important;
+  background-image: none !important;
+  outline: 2px solid #d69a00 !important;
+  outline-offset: -2px !important;
+  box-shadow: inset 5px 0 0 #d69a00 !important;
 }
-.rgp-choice td, .rgp-choice {
-  background: rgba(63,185,80,.15) !important;
-  box-shadow: inset 4px 0 0 rgba(63,185,80,.8) !important;
-  transition: background .2s !important;
+.rgp-choice {
+  background-color: #c9f2d5 !important;
+  background-image: none !important;
+  outline: 2px solid #218c45 !important;
+  outline-offset: -2px !important;
+  box-shadow: inset 5px 0 0 #218c45 !important;
 }
+/* Clear opaque content wrappers, retaining the appearance of action controls. */
+:is(.rgp-hit, .rgp-choice) :is(div, span, p, h4, h5, td):not(button *, a *, [role="button"] *) {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
 
 /* ── Justify tab ──────────────────────────────────────────────────────────── */
 #rgp-just-text {

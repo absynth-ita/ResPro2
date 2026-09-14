@@ -1,0 +1,26 @@
+const {chromium}=require('playwright');
+const path=require('path');
+const base=path.resolve(__dirname,'..')+'/';
+(async()=>{
+ const browser=await chromium.launch({headless:true});const page=await browser.newPage();
+ const load=async html=>{await page.setContent(html);for(const f of ['constants','utils','myaccess','justifier'])await page.addScriptTag({path:base+'src/core/'+f+'.js'});await page.evaluate(()=>{for(const k in RGP.const.TIMING)RGP.const.TIMING[k]=k==='CANDIDATE_TIMEOUT'?250:1;});};
+ const assert=(x,m)=>{if(!x)throw Error(m);console.log('PASS '+m)};
+ await load(`<aside><input placeholder="Search pages & features"></aside><main><section><h3>Available Application Roles</h3><input id="correct" placeholder="Search by Application Roles"><div><h4>PS AZ Intrastat (NP-GE)</h4><button aria-label="Add">+</button></div><div><h4>Another role</h4><button><svg><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></div><button aria-label="Next page"><svg></svg></button></section><section><h3>Selected Application Roles</h3><input placeholder="Search by Application Roles"><div>Do not remove<button aria-label="Remove">−</button></div></section></main>`);
+ assert(await page.evaluate(()=>RGP.myaccess.getSearchInput()?.id==='correct'),'available search selected');
+ await page.evaluate(()=>RGP.myaccess.triggerSearch('PS AZ Intrastat'));
+ assert(await page.evaluate(()=>document.querySelector('#correct').value==='PS AZ Intrastat'&&document.querySelector('aside input').value===''&&document.querySelectorAll('input')[2].value===''),'search isolates both unrelated inputs');
+ assert(await page.evaluate(()=>RGP.myaccess.getCandidates().length===2),'only add buttons, including SVG plus');
+ await page.locator('main').evaluate(el=>el.remove());
+ assert(await page.evaluate(()=>RGP.myaccess.getSearchInput()===null),'missing section never falls back to sidebar');
+ await load(`<h1>Review & Justification</h1><div id="roles"><article><h4>Role One</h4><button>Add Justification</button></article><article><h4>Role Two</h4><button>Add Justification</button></article></div><div><label>Comments</label><textarea id="general"></textarea></div><div><input type="checkbox"><span>I confirm that I have reviewed this request and that I need this access to do my job.</span></div><button id="submit">Submit Request</button><div id="rgp-panel"><textarea id="rgp-text">Keep template</textarea></div>`);
+ await page.evaluate(()=>{window.submitted=0;document.querySelector('#submit').onclick=()=>window.submitted++;document.querySelectorAll('article button').forEach(b=>b.onclick=()=>{setTimeout(()=>{document.querySelectorAll('article textarea').forEach(t=>t.style.display='none');b.remove();const t=document.createElement('textarea');t.placeholder='Provide a reason for your request';b.saved=true;document.querySelectorAll('article')[document.querySelector('article textarea')?1:0].append(t);},10);});});
+ const result=await page.evaluate(()=>RGP.justifier.runJustify('Need for work',()=>{}));
+ assert(result.filled===3,'two delayed accordion justifications and global comments filled');
+ assert(await page.evaluate(()=>[...document.querySelectorAll('article textarea')].every(t=>t.value==='Need for work')&&document.querySelector('#general').value==='Need for work'&&document.querySelector('input').checked&&!window.submitted&&document.querySelector('#rgp-text').value==='Keep template'),'correct fields, disclaimer, no submit or template modification');
+ assert((await page.evaluate(()=>RGP.justifier.runJustify('REPLACE',()=>{}))).filled===0,'repeat run preserves existing text');
+ await load(`<textarea id="role_buisnesjustifcation_1"></textarea><textarea id="businessjustification_SOD_R_1"></textarea><textarea id="comments_global"></textarea><input type="checkbox" id="disclaimerCheckbox">`);
+ const legacy=await page.evaluate(()=>RGP.justifier.runJustify('Legacy',()=>{}));assert(legacy.filled===2&&legacy.conflicts===1,'legacy justification and SoD preserved');
+ await load('<button>Add Justification</button><div><label>Comments</label><textarea></textarea></div><input type="checkbox" id="disclaimerCheckbox">');
+ assert(await page.evaluate(async()=>{try{await RGP.justifier.runJustify('Wrong',()=>{});return false;}catch{return !document.querySelector('textarea').value&&!document.querySelector('input').checked;}}),'unrecognized expansion stops before filling comments/disclaimer');
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

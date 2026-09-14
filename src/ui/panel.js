@@ -247,13 +247,17 @@ window.RGP = window.RGP || {};
     els.justText.value = state.justText;
     els.justText.placeholder = "Testo da inserire in tutte le justification… (Ctrl+Enter per compilare)";
 
+    let justifying = false;
     async function handleJustify() {
+      if (justifying) return;
       const text = els.justText.value.trim();
       if (!text) { justLog.log("⚠️ Inserisci il testo di giustificazione", "rgp-warn"); return; }
       state.justText = text;
       RGP.storage.saveJustText(text);
 
       justLog.clear();
+      justifying = true;
+      els.justRun.disabled = true;
       try {
         const { filled, conflicts } = await RGP.justifier.runJustify(text, justLog.log);
         justLog.log("──────────────────────────");
@@ -265,6 +269,9 @@ window.RGP = window.RGP || {};
       } catch (e) {
         justLog.log("❌ Errore: " + e.message, "rgp-err");
         console.error("[ResPro] justify error:", e);
+      } finally {
+        justifying = false;
+        els.justRun.disabled = false;
       }
     }
     els.justRun.addEventListener("click", handleJustify);

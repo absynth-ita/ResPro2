@@ -103,6 +103,7 @@ window.RGP = window.RGP || {};
         onProgress(i + 1, list.length);
         log(`🔎 [${i + 1}/${list.length}] Richiesta: ${item}`);
 
+        M.clearVisuals();
         const searched = await M.triggerSearch(item, signal);
         if (!searched) { log("❌ Casella di ricerca non trovata", "rgp-err"); break; }
 
@@ -132,6 +133,12 @@ window.RGP = window.RGP || {};
           }
         }
 
+        // Yield to the browser before clicking: otherwise the chosen card can
+        // disappear in the same task that adds the green class, without a paint.
+        await delay(RGP.const.TIMING.HIGHLIGHT_PREVIEW, signal);
+        await waitIfPaused();
+        if (signal.aborted) { aborted = true; break; }
+
         // Skip rules — il match resta su choice.text (più ricco), il log su displayText
         const reason = RGP.skip.shouldSkip(choice.text, skipRules);
         if (reason) {
@@ -142,6 +149,12 @@ window.RGP = window.RGP || {};
 
         // Click effettivo
         try {
+          // The preview yields control to the page. Never click a stale result
+          // if Saviynt replaced the cards while the highlight was visible.
+          const current = M.getCandidates(panelEl).find(c => c.btn === choice.btn && c.text === choice.text);
+          if (!current || !choice.btn.isConnected || choice.btn.disabled || choice.btn.getAttribute("aria-disabled") === "true") {
+            throw new Error("Risultati cambiati durante l’evidenziazione: riprova questa responsibility");
+          }
           M.clickAdd(choice.btn);
           added++;
           log("   Assegnata: ✅ " + (choice.displayText || choice.text), "rgp-ok");

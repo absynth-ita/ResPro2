@@ -39,6 +39,7 @@ RGP.const = {
     CANDIDATE_TIMEOUT: 7000,
     POLL_INTERVAL: 250,
     PER_ITEM_PAUSE: 700,
+    HIGHLIGHT_PREVIEW: 650,   // render giallo/verde prima che il clic rimuova la card
     JUSTIFY_PAUSE: 100,
     CHECKBOX_PAUSE: 200,
   },

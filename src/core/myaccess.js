@@ -6,33 +6,54 @@ window.RGP = window.RGP || {};
 (function () {
   const { delay, setNativeValue } = RGP.utils;
 
-  /**
-   * Trova tutti i bottoni "+" / ADD presenti nella pagina, escludendo
-   * quelli che appartengono al pannello ResPro (passato come `panelEl`).
-   */
+  const normalize = value => (value || "").replace(/\s+/g, " ").trim();
+  function isPageElement(el) {
+    return !!el && !el.closest('[id^="rgp-"], nav, aside, header, [role="navigation"]') &&
+      el.getClientRects().length > 0 && getComputedStyle(el).visibility !== "hidden";
+  }
+
+  function exactLabels(text, root = document) {
+    return [...root.querySelectorAll("*")].filter(el =>
+      isPageElement(el) && normalize(el.textContent).replace(/^\*\s*/, "") === text &&
+      ![...el.children].some(c => normalize(c.textContent).replace(/^\*\s*/, "") === text));
+  }
+
+  // Find the available column by its heading, never by the first Search input.
+  function getAvailableRolesRoot() {
+    for (const label of exactLabels("Available Application Roles")) {
+      for (let n = label.parentElement; n && n !== document.body; n = n.parentElement) {
+        if (exactLabels("Selected Application Roles", n).length) break;
+        if ([...n.querySelectorAll("input")].some(isPageElement)) return n;
+      }
+    }
+    return null;
+  }
+
   function getAddButtons(panelEl) {
+    const root = getAvailableRolesRoot();
+    if (!root) return [];
     const seen = new Set();
-    const notOurs = el => el && (!panelEl || !panelEl.contains(el));
-
-    document.querySelectorAll('[aria-label="ADD"],[aria-label="Add"],[aria-label="add"]')
-      .forEach(el => { if (notOurs(el)) seen.add(el); });
-
-    document.querySelectorAll(".ent-add-selected-item")
-      .forEach(el => { if (notOurs(el)) seen.add(el); });
-
-    document.querySelectorAll("a i.icon-v2-add, button i.icon-v2-add")
-      .forEach(el => { const p = el.closest("a,button"); if (notOurs(p)) seen.add(p); });
-
-    document.querySelectorAll("button,a").forEach(el => {
-      if (!notOurs(el)) return;
-      const txt = el.textContent.trim();
-      // bottone con testo "+" puro (layout card nuovo)
-      if (txt === "+") seen.add(el);
-      // bottone con SVG e quasi-niente testo (cerchio + di MyAccess)
-      else if (el.querySelector("svg") && txt.replace(/\s/g, "").length <= 3) seen.add(el);
+    root.querySelectorAll('button, a, [role="button"], .ent-add-selected-item').forEach(el => {
+      if (!isPageElement(el) || panelEl?.contains(el) || el.disabled || el.getAttribute("aria-disabled") === "true") return;
+      const label = normalize(el.getAttribute("aria-label") || el.getAttribute("title") || el.textContent);
+      const explicitAdd = /^(add(?:\s+.*)?|\+)$/i.test(label) && !/justification/i.test(label);
+      const icon = el.matches(".ent-add-selected-item") || el.querySelector(
+        '.icon-v2-add, [data-icon="plus"], [data-icon="add"], [class*="icon-plus"], .lucide-plus, .lucide-circle-plus');
+      // Unlabelled SVG plus: two perpendicular straight strokes (not a minus/chevron).
+      const svg = el.querySelector("svg");
+      const strokes = svg ? [...svg.querySelectorAll("line, path")].map(n => n.tagName.toLowerCase() === "line"
+        ? [Number(n.getAttribute("x1")), Number(n.getAttribute("y1")), Number(n.getAttribute("x2")), Number(n.getAttribute("y2"))]
+        : (() => { const d = n.getAttribute("d") || ""; const m = d.match(/^M\s*([\d.]+)[ ,]+([\d.]+)\s*L\s*([\d.]+)[ ,]+([\d.]+)\s*$/i); return m ? m.slice(1).map(Number) : []; })()) : [];
+      const plus = strokes.some(a => a.length === 4 && a[0] === a[2] && a[1] !== a[3]) &&
+        strokes.some(a => a.length === 4 && a[1] === a[3] && a[0] !== a[2]);
+      if (explicitAdd || icon || plus) seen.add(el);
     });
-
-    return [...seen];
+    // Some pages put aria-label on the icon inside the clickable control.
+    root.querySelectorAll('[aria-label="ADD"], [aria-label="Add"], [aria-label="add"]').forEach(icon => {
+      const el = icon.closest('button, a, [role="button"]') || icon;
+      if (isPageElement(el) && !el.disabled && el.getAttribute("aria-disabled") !== "true" && !panelEl?.contains(el)) seen.add(el);
+    });
+    return [...seen].filter(el => ![...seen].some(other => other !== el && el.contains(other)));
   }
 
   /**
@@ -122,10 +143,13 @@ window.RGP = window.RGP || {};
   }
 
   function getSearchInput() {
-    return document.querySelector(
-      'input[placeholder*="Search"], input[placeholder*="Application Roles"], ' +
-      'input[type="search"], input[name*="search"]'
-    );
+    const root = getAvailableRolesRoot();
+    if (!root) return null;
+    const inputs = [...root.querySelectorAll("input")].filter(el => isPageElement(el) && !el.disabled && !el.readOnly);
+    const precise = inputs.filter(el => /search by application roles/i.test(el.getAttribute("placeholder") || ""));
+    if (precise.length === 1) return precise[0];
+    const searches = inputs.filter(el => /search/i.test([el.type, el.name, el.placeholder, el.getAttribute("aria-label")].join(" ")));
+    return searches.length === 1 ? searches[0] : null;
   }
 
   /**
@@ -214,10 +238,12 @@ window.RGP = window.RGP || {};
 
   function applyVisual(el, cls) {
     const target = el.closest("tr") || el;
+    target.classList.remove("rgp-hit", "rgp-choice");
     target.classList.add(cls);
   }
 
   RGP.myaccess = {
+    isPageElement, exactLabels, getAvailableRolesRoot,
     getAddButtons, findContainer, getCandidates, getSearchInput,
     extractDisplayText,
     triggerSearch, waitForCandidates, clickAdd,
